@@ -2,14 +2,22 @@
   "name": "@cpay/wallet-sdk",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsc",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bip39": "^3.1.0",
+    "permissionless": "^0.2.54",
     "viem": "^2.35.1"
+  },
+  "devDependencies": {
+    "@cpay/typescript-config": "workspace:*"
   }
 }
