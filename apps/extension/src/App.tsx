@@ -1,11 +1,14 @@
-import './App.css';
+import { initCypherStorage } from '@cpay/cipher-store';
+import AppRoutes from './Routes';
+import { storageAdapter } from './lib/storageAdapter';
+
+initCypherStorage(storageAdapter);
 
 const App = () => {
   return (
-    <div className="content">
-      <h1>Rsbuild with React</h1>
-      <p>Start building amazing things with Rsbuild.</p>
-    </div>
+    // <GlobalLayout>
+    <AppRoutes />
+    // </GlobalLayout>
   );
 };
 
