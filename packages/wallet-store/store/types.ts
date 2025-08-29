@@ -105,10 +105,6 @@ export interface UpdateWalletPayload {
   wallet: Partial<Wallet>;
 }
 
-export interface AddAccountPayload {
-  account: WalletAccount;
-}
-
 export interface UpdateAccountPayload {
   accountId: string;
   account: Partial<WalletAccount>;

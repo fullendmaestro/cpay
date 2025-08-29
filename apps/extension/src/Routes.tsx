@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import WelcomePage from './pages/welcome';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthenticationPage from './pages/AuthenticationPage';
+import HomePage from './pages/home/HomePage';
 
 export default function AppRoutes() {
   return (
@@ -22,7 +23,7 @@ export default function AppRoutes() {
         path='/home'
         element={
           <ProtectedRoute>
-            <div>home page</div>
+            <HomePage />
           </ProtectedRoute>
         }
       />
@@ -30,7 +31,7 @@ export default function AppRoutes() {
         path='/'
         element={
           <ProtectedRoute>
-            <div>Home Page</div>
+            <HomePage />
           </ProtectedRoute>
         }
       />

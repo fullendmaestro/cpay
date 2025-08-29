@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { WalletState, UpdateWalletPayload, UpdateAccountPayload, AddAccountPayload, Wallet } from '../types';
+import type { WalletState, UpdateWalletPayload, UpdateAccountPayload, Wallet, WalletAccount } from '../types';
 
 const initialState: WalletState = {
   selectedWalletId: '',
@@ -53,9 +53,8 @@ const walletSlice = createSlice({
     },
 
     // Account management
-    addAccount: (state, action: PayloadAction<AddAccountPayload>) => {
-      const { account } = action.payload;
-      state.walletsAccounts.push(account);
+    addAccount: (state, action: PayloadAction<WalletAccount>) => {
+      state.walletsAccounts.push(action.payload);
     },
     updateAccount: (state, action: PayloadAction<UpdateAccountPayload>) => {
       const { accountId, account } = action.payload;
