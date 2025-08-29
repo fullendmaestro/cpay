@@ -2,18 +2,49 @@
   "name": "@cpay/wallet-store",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./store": {
+      "import": "./dist/store/index.js",
+      "require": "./dist/store/index.js",
+      "types": "./dist/store/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "package.json",
+    "README.md"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "mocha",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@cpay/wallet-sdk": "workspace:*",
     "@reduxjs/toolkit": "^2.8.2",
+    "react": "^19.1.1",
     "react-redux": "^9.2.0",
     "redux": "^5.0.1",
     "redux-devtools-extension": "^2.13.9",
-    "redux-persist": "^6.0.0"
+    "redux-persist": "^6.0.0",
+    "redux-persist-webextension-storage": "^1.0.2"
+  },
+  "devDependencies": {
+    "@cpay/typescript-config": "workspace:*",
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.8",
+    "@types/redux-persist-webextension-storage": "^1.0.3"
   }
 }
