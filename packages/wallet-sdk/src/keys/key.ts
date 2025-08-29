@@ -22,3 +22,15 @@ export function validateMnemonic(mnemonic: string): boolean {
     return false;
   }
 }
+
+export function getAddressFromPublicKey(publicKey: string): string {
+  try {
+  } catch (error) {}
+  return '';
+}
+
+export function getSmartAccountAddress(publicKey: string): string {
+  try {
+  } catch (error) {}
+  return '';
+}
