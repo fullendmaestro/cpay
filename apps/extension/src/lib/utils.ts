@@ -1,4 +1,12 @@
-import { clsx, type ClassValue } from 'clsx';
+// Example utility function: format balance
+export function formatBalance(balance: string | number, decimals = 2) {
+  if (typeof balance === 'string') {
+    const num = parseFloat(balance);
+    if (isNaN(num)) return balance;
+    return num.toFixed(decimals);
+  }
+  return balance.toFixed(decimals);
+}import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
