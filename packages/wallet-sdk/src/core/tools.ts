@@ -176,19 +176,81 @@ export async function transferETH(privateKey: string, to: string, amount: string
 }
 
 
-export async function transferERC20(privateKey: string, tokenAddress: string, toAddress: string, amount: string, network: string = 'ethereum') {
+import { transferERC20WithUsdcGas, ARBITRUM_SEPOLIA_USDC, ARBITRUM_SEPOLIA_PAYMASTER, ARBITRUM_SEPOLIA_BUNDLER } from './services/circle-paymaster.js';
+
+/**
+ * Transfer ERC20 tokens, optionally using USDC as gas via Circle Paymaster (account abstraction)
+ * @param privateKey Sender's private key
+ * @param tokenAddress ERC20 token contract address
+ * @param toAddress Recipient address
+ * @param amount Amount to send (in token units, string or bigint)
+ * @param network Network name or chain ID
+ * @param gasAsset 'usdc' (default) or 'native' (ETH, MATIC, etc.)
+ * @param options Optional: usdcAddress, paymasterAddress, bundlerUrl, chain (for advanced config)
+ */
+export async function transferERC20(
+  privateKey: string,
+  tokenAddress: string,
+  toAddress: string,
+  amount: string,
+  network: string = 'ethereum',
+  gasAsset: 'usdc' | 'native' = 'usdc',
+  options?: {
+    usdcAddress?: string,
+    paymasterAddress?: string,
+    bundlerUrl?: string,
+    chain?: any,
+  }
+) {
   try {
-    const formattedKey = privateKey.startsWith('0x') ? (privateKey as `0x${string}`) : (`0x${privateKey}` as `0x${string}`);
-    const result = await services.transferERC20(tokenAddress as Address, toAddress as Address, amount, formattedKey, network);
-    return {
-      success: true,
-      txHash: result.txHash,
-      network,
-      tokenAddress,
-      recipient: toAddress,
-      amount: result.amount.formatted,
-      symbol: result.token.symbol,
-    };
+    if (gasAsset === 'usdc') {
+      // Use Circle Paymaster account abstraction logic
+      // Only works on supported networks (e.g., Arbitrum Sepolia, Base, etc.)
+      const usdcAddress = options?.usdcAddress || ARBITRUM_SEPOLIA_USDC;
+      const paymasterAddress = options?.paymasterAddress || ARBITRUM_SEPOLIA_PAYMASTER;
+      const bundlerUrl = options?.bundlerUrl || ARBITRUM_SEPOLIA_BUNDLER;
+      const chain = options?.chain;
+      // Convert amount to bigint (USDC 6 decimals)
+  // Use Number for compatibility if BigInt is not available
+  const amountBigInt = typeof amount === 'bigint' ? amount : Number(Math.floor(parseFloat(amount) * 1_000_000));
+      const receipt = await transferERC20WithUsdcGas({
+        privateKey: privateKey as `0x${string}`,
+        recipientAddress: toAddress,
+        amount: amountBigInt,
+        usdcAddress,
+        paymasterAddress,
+        bundlerUrl,
+        chain,
+      });
+      return {
+        success: true,
+        txHash: (receipt && (receipt.userOpHash || receipt.transactionHash)) || undefined,
+        network,
+        tokenAddress,
+        recipient: toAddress,
+        amount,
+        symbol: 'USDC',
+        paymaster: paymasterAddress,
+        bundler: bundlerUrl,
+        accountAbstraction: true,
+      };
+    } else {
+      // Standard EOA transfer (native gas)
+      const formattedKey = (typeof privateKey === 'string' && privateKey.indexOf('0x') === 0)
+        ? (privateKey as `0x${string}`)
+        : (`0x${privateKey}` as `0x${string}`);
+      const result = await services.transferERC20(tokenAddress as Address, toAddress as Address, amount, formattedKey, network);
+      return {
+        success: true,
+        txHash: result.txHash,
+        network,
+        tokenAddress,
+        recipient: toAddress,
+        amount: result.amount.formatted,
+        symbol: result.token.symbol,
+        accountAbstraction: false,
+      };
+    }
   } catch (error) {
     throw new Error(`Error transferring ERC20 tokens: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -197,7 +259,9 @@ export async function transferERC20(privateKey: string, tokenAddress: string, to
 
 export async function approveTokenSpending(privateKey: string, tokenAddress: string, spenderAddress: string, amount: string, network: string = 'ethereum') {
   try {
-    const formattedKey = privateKey.startsWith('0x') ? (privateKey as `0x${string}`) : (`0x${privateKey}` as `0x${string}`);
+    const formattedKey = (typeof privateKey === 'string' && privateKey.indexOf('0x') === 0)
+      ? (privateKey as `0x${string}`)
+      : (`0x${privateKey}` as `0x${string}`);
     const result = await services.approveERC20(tokenAddress as Address, spenderAddress as Address, amount, formattedKey, network);
     return {
       success: true,
@@ -217,7 +281,7 @@ export async function approveTokenSpending(privateKey: string, tokenAddress: str
 export async function transferNFT(privateKey: string, tokenAddress: string, tokenId: string, toAddress: string, network: string = 'ethereum') {
   try {
     const formattedKey = privateKey.startsWith('0x') ? (privateKey as `0x${string}`) : (`0x${privateKey}` as `0x${string}`);
-    const result = await services.transferERC721(tokenAddress as Address, toAddress as Address, BigInt(tokenId), formattedKey, network);
+  const result = await services.transferERC721(tokenAddress as Address, toAddress as Address, Number(tokenId), formattedKey, network);
     return {
       success: true,
       txHash: result.txHash,
@@ -236,8 +300,10 @@ export async function transferNFT(privateKey: string, tokenAddress: string, toke
 
 export async function transferERC1155(privateKey: string, tokenAddress: string, tokenId: string, amount: string, toAddress: string, network: string = 'ethereum') {
   try {
-    const formattedKey = privateKey.startsWith('0x') ? (privateKey as `0x${string}`) : (`0x${privateKey}` as `0x${string}`);
-    const result = await services.transferERC1155(tokenAddress as Address, toAddress as Address, BigInt(tokenId), amount, formattedKey, network);
+    const formattedKey = (typeof privateKey === 'string' && privateKey.indexOf('0x') === 0)
+      ? (privateKey as `0x${string}`)
+      : (`0x${privateKey}` as `0x${string}`);
+  const result = await services.transferERC1155(tokenAddress as Address, toAddress as Address, Number(tokenId), amount, formattedKey, network);
     return {
       success: true,
       txHash: result.txHash,
@@ -253,21 +319,24 @@ export async function transferERC1155(privateKey: string, tokenAddress: string, 
 }
 
 
-export async function transferToken(privateKey: string, tokenAddress: string, toAddress: string, amount: string, network: string = 'ethereum') {
-  try {
-    const result = await services.transferERC20(tokenAddress, toAddress, amount, privateKey, network);
-    return {
-      success: true,
-      txHash: result.txHash,
-      tokenAddress,
-      toAddress,
-      amount: result.amount.formatted,
-      symbol: result.token.symbol,
-      network,
-    };
-  } catch (error) {
-    throw new Error(`Error transferring tokens: ${error instanceof Error ? error.message : String(error)}`);
+/**
+ * Alias for transferERC20, for compatibility
+ */
+export async function transferToken(
+  privateKey: string,
+  tokenAddress: string,
+  toAddress: string,
+  amount: string,
+  network: string = 'ethereum',
+  gasAsset: 'usdc' | 'native' = 'usdc',
+  options?: {
+    usdcAddress?: string,
+    paymasterAddress?: string,
+    bundlerUrl?: string,
+    chain?: any,
   }
+) {
+  return transferERC20(privateKey, tokenAddress, toAddress, amount, network, gasAsset, options);
 }
 
 
@@ -280,7 +349,7 @@ export async function readContract(contractAddress: string, abi: any[], function
       functionName,
       args,
     };
-    const result = await services.readContract(params, network);
+  const result = await services.readContract(params, network);
     return result;
   } catch (error) {
     throw new Error(`Error reading contract: ${error instanceof Error ? error.message : String(error)}`);
@@ -342,7 +411,7 @@ export async function getTokenInfo(tokenAddress: string, network: string = 'ethe
 
 export async function getNFTInfo(tokenAddress: string, tokenId: string, network: string = 'ethereum') {
   try {
-    const nftInfo = await services.getERC721TokenMetadata(tokenAddress as Address, BigInt(tokenId), network);
+  const nftInfo = await services.getERC721TokenMetadata(tokenAddress as Address, Number(tokenId), network);
     let owner = null;
     try {
       owner = await services.getPublicClient(network).readContract({
@@ -357,7 +426,7 @@ export async function getNFTInfo(tokenAddress: string, tokenId: string, network:
           },
         ],
         functionName: 'ownerOf',
-        args: [BigInt(tokenId)],
+        args: [Number(tokenId)],
       });
     } catch (e) {
       // Ownership info not available
@@ -377,7 +446,7 @@ export async function getNFTInfo(tokenAddress: string, tokenId: string, network:
 
 export async function checkNFTOwnership(tokenAddress: string, tokenId: string, ownerAddress: string, network: string = 'ethereum') {
   try {
-    const isOwner = await services.isNFTOwner(tokenAddress, ownerAddress, BigInt(tokenId), network);
+  const isOwner = await services.isNFTOwner(tokenAddress, ownerAddress, Number(tokenId), network);
     return {
       tokenAddress,
       tokenId,
@@ -394,7 +463,7 @@ export async function checkNFTOwnership(tokenAddress: string, tokenId: string, o
 
 export async function getERC1155TokenURI(tokenAddress: string, tokenId: string, network: string = 'ethereum') {
   try {
-    const uri = await services.getERC1155TokenURI(tokenAddress as Address, BigInt(tokenId), network);
+  const uri = await services.getERC1155TokenURI(tokenAddress as Address, Number(tokenId), network);
     return {
       contract: tokenAddress,
       tokenId,
@@ -424,7 +493,7 @@ export async function getNFTBalance(tokenAddress: string, ownerAddress: string, 
 
 export async function getERC1155Balance(tokenAddress: string, tokenId: string, ownerAddress: string, network: string = 'ethereum') {
   try {
-    const balance = await services.getERC1155Balance(tokenAddress as Address, ownerAddress as Address, BigInt(tokenId), network);
+  const balance = await services.getERC1155Balance(tokenAddress as Address, ownerAddress as Address, Number(tokenId), network);
     return {
       contract: tokenAddress,
       tokenId,
@@ -440,7 +509,9 @@ export async function getERC1155Balance(tokenAddress: string, tokenId: string, o
 
 export function getAddressFromPrivateKey(privateKey: string) {
   try {
-    const formattedKey = privateKey.startsWith('0x') ? (privateKey as Hex) : (`0x${privateKey}` as Hex);
+    const formattedKey = (typeof privateKey === 'string' && privateKey.indexOf('0x') === 0)
+      ? (privateKey as Hex)
+      : (`0x${privateKey}` as Hex);
     const address = services.getAddressFromPrivateKey(formattedKey);
     return {
       address,
